@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Analyse de l'Émotion</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Analyse de l'Émotion</h1>
+      <p>
+        Téléchargez une photo pour obtenir une analyse détaillée de l'humeur
+        détectée.
+      </p>
+
+      <div class="input-section">
+        <input
+          type="file"
+          id="fileInput"
+          accept="image/*"
+          style="display: none"
+        />
+        <button onclick="document.getElementById('fileInput').click()">
+          Choisir une photo
+        </button>
+
+        <button id="submitBtn" onclick="sendAnalysis()" disabled>
+          Valider l'analyse
+        </button>
+      </div>
+
+      <div id="previewContainer" style="margin-top: 20px; display: none">
+        <img
+          id="imagePreview"
+          src="#"
+          alt="Aperçu"
+          style="max-width: 300px; border-radius: 8px"
+        />
+      </div>
+
+      <div class="results-section">
+        <h2>Résultats de l'analyse</h2>
+        <div id="loader" style="display: none">Analyse en cours...</div>
+
+        <h3 id="emotionDisplay" class="detected-emotion">--</h3>
+        <h3 id="confidenceDisplay" class="confidence">--%</h3>
+        <p id="geminiText" class="gemini-analysis">
+          Les résultats s'afficheront ici après l'analyse.
+        </p>
+      </div>
+    </div>
+    <button onclick="window.location.href = '/'">Recommencer</button>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Moodify Gallery</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </head>
+  <body>
+    <h1 style="text-align: center">Comment vous sentez-vous ?</h1>
+    <div
+      class="container"
+      style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center"
+    >
+      {% for item in emotions %}
+      <div
+        class="card"
+        style="
+          border: 1px solid #ddd;
+          padding: 15px;
+          border-radius: 10px;
+          width: 200px;
+        "
+      >
+        <h2>{{ item.emotion }}</h2>
+        <img
+          src="{{ item.image }}"
+          alt="{{ item.emotion }}"
+          style="width: 100%; border-radius: 5px"
+        />
+        <p style="font-size: 0.9em">{{ item.description }}</p>
+        <button onclick="saveEmotion('{{ item.emotion }}')">Choisir</button>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div style="text-align: center; margin-top: 20px">
+      <button
+        onclick="window.location.href = '/'"
+        style="background-color: #ff80ab"
+      >
+        Charger un fichier
+      </button>
+    </div>
+  </body>
+</html>

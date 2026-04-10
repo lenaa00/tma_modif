@@ -1,0 +1,26 @@
+[
+  {
+    "emotion": "joie",
+    "description": "Un sentiment de bonheur intense, de plaisir et de satisfaction."
+  },
+  {
+    "emotion": "tristesse",
+    "description": "Une douleur émotionnelle associée à la perte, au désespoir ou à la déception."
+  },
+  {
+    "emotion": "neutre",
+    "description": "Un état d'équilibre sans coloration émotionnelle particulière."
+  },
+  {
+    "emotion": "colere",
+    "description": "Une réaction d'irritation ou d'hostilité face à une frustration ou une injustice."
+  },
+  {
+    "emotion": "amour",
+    "description": "Un attachement profond et une affection intense envers quelqu'un ou quelque chose."
+  },
+  {
+    "emotion": "angoisse",
+    "description": "Un sentiment de malaise profond, d'inquiétude ou de peur face à une menace diffuse."
+  }
+]

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ta Playlist Moodify</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Votre Playlist du moment</h1>
+      {% for item in emotions %}
+      <div class="result-card">
+        <h2 class="detected-emotion">{{ item.emotion }}</h2>
+        <img
+          src="{{ item.image }}"
+          style="max-width: 200px; border-radius: 10px; margin-bottom: 20px"
+        />
+        <p><i>{{ item.description }}</i></p>
+
+        <iframe
+          src="https://open.spotify.com/embed/playlist/{{ item.spotify_url }}"
+          width="100%"
+          height="352"
+          frameborder="0"
+          allow="
+            autoplay;
+            clipboard-write;
+            encrypted-media;
+            fullscreen;
+            picture-in-picture;
+          "
+          loading="lazy"
+          style="border-radius: 12px"
+        ></iframe>
+      </div>
+      {% endfor %}
+
+      <button onclick="window.location.href = '/'">Recommencer</button>
+    </div>
+  </body>
+</html>
