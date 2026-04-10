@@ -16,6 +16,10 @@ CORS(app)
 
 ai_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
+# Correction TMA :
+# Problème : le backend pointait vers une mauvaise base MongoDB.
+# Cause : le nom utilisé dans le code ne correspondait pas à la base visible dans Atlas.
+# Correction : mise à jour du nom de base pour utiliser la bonne base moodify.
 
 db_client = MongoClient(os.getenv("MONGO_URI"))
 db = db_client["moodify"]
@@ -45,7 +49,10 @@ def additional_page():
 def debug_mode():
     return jsonify({"message": "You've discovered debug mode!"})
 
-
+# Correction TMA :
+# Problème : les erreurs de l'analyse IA n'étaient pas compréhensibles.
+# Cause : le bloc except renvoyait seulement "error" sans détail.
+# Correction : ajout d'un message explicite avec le détail de l'exception.
 @app.route("/analyse-emotion", methods=["POST"])
 def analyze_emotion():
     if "image" not in request.files:
@@ -72,7 +79,11 @@ def analyze_emotion():
             model="gemini-2.5-flash", contents=[prompt, image_part]
         )
 
-        # Nettoyage du JSON
+        # Correction TMA :
+        # Problème : la réponse de l'IA pouvait ne pas être un JSON valide.
+        # Cause : json.loads() plante si la réponse est vide ou mal formatée.
+        # Correction : ajout d'une vérification de réponse vide et d'un try/except sur le parsing JSON.
+
         raw_text = response.text.replace("```json", "").replace("```", "").strip()
         
         if not raw_text:
@@ -124,11 +135,18 @@ def playlist():
 
     return render_template("playlist.html", emotions=[combined_data])
 
-
+# Correction TMA :
+# Problème : la route utilisait des noms de collections incohérents.
+# Cause : "entrie" et "emotion" ne correspondaient pas aux collections utilisées ailleurs.
+# Correction : harmonisation avec "entries" et "emotions".
 @app.route("/save-emotion", methods=["POST"])
 def save_emotion():
     collection_entries = db["entries"]
     collection_emotions = db["emotions"]
+    # Correction TMA :
+    # Problème : la route pouvait planter si aucune donnée JSON n'était envoyée.
+    # Cause : request.get_json() peut retourner None.
+    # Correction : ajout d'une vérification avant d'accéder à data.get(...).
     data = request.get_json()
 
     if not data:
