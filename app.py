@@ -18,37 +18,40 @@ ai_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
 db_client = MongoClient(os.getenv("MONGO_URI"))
-db = db_client["Moodifi"] 
+db = db_client["moodify"]
 collection = db["emotions"]
+
 
 @app.after_request
 def add_header(response):
-   
-    response.headers['Content-Security-Policy'] = "frame-ancestors 'self' *"
+
+    response.headers["Content-Security-Policy"] = "frame-ancestors 'self' *"
     return response
 
 
-@app.route('/')
+@app.route("/")
 def index():
     # Récupération des émotions enregistrées
-    emotions_list = list(collection.find()) 
-    return render_template('index.html', emotions=emotions_list)
+    emotions_list = list(collection.find())
+    return render_template("index.html", emotions=emotions_list)
 
-@app.route('/additional')
+
+@app.route("/additional")
 def additional_page():
-    return render_template('additional.html')
+    return render_template("additional.html")
 
-@app.route('/debug-mode')
+
+@app.route("/debug-mode")
 def debug_mode():
     return jsonify({"message": "You've discovered debug mode!"})
 
-@app.route('/analyse-emotion', methods=['POST'])
+
+@app.route("/analyse-emotion", methods=["POST"])
 def analyze_emotion():
-    if 'image' not in request.files:
+    if "image" not in request.files:
         return jsonify({"error": "Aucune image reçue"}), 400
-    
-    file = request.files['image']
-    
+
+    file = request.files["image"]
 
     img_bytes = file.read()
     mime_type = file.content_type
@@ -59,31 +62,40 @@ def analyze_emotion():
             "Réponds uniquement au format JSON avec ces clés : "
             "'emotion' (un mot), 'confidence' (nombre entre 0 et 100), "
             "'analysis' (une description simple + quelques mots d'encouragement)."
-            "lequel de ces mots décrit le mieux l'émotion : joie, tristesse, neutre, colère, amour, angoisse ?" 
+            "lequel de ces mots décrit le mieux l'émotion : joie, tristesse, neutre, colère, amour, angoisse ?"
             "'result' (un mot parmi : joie, tristesse, neutre, colère, amour, angoisse)."
         )
 
-        image_part = types.Part.from_bytes(
-            data=img_bytes,
-            mime_type=mime_type
-        )
+        image_part = types.Part.from_bytes(data=img_bytes, mime_type=mime_type)
 
-        
         response = ai_client.models.generate_content(
-            model="gemini-2.5-flash", 
-            contents=[prompt, image_part]
+            model="gemini-2.5-flash", contents=[prompt, image_part]
         )
 
         # Nettoyage du JSON
-        raw_text = response.text.replace('```json', '').replace('```', '').strip()
+        raw_text = response.text.replace("```json", "").replace("```", "").strip()
         
-        return jsonify(json.loads(raw_text))
+        if not raw_text:
+            return jsonify({"error": "Le modèle n'a pas retourné de texte"}), 500
+        
+        try:
+             parsed_data = json.loads(raw_text)
+        except json.JSONDecodeError:
+            return jsonify({
+                "error": "Le modèle n'a pas retourné un JSON valide", 
+                "raw_response": raw_text}), 500
+        return jsonify(parsed_data)
 
     except Exception as e:
-        
-        return jsonify("error"), 500
+        return (
+            jsonify(
+                {"error": "Erreur lors de l'analyse de l'image", "details": str(e)}
+            ),
+            500,
+        )
 
-@app.route('/playlist', methods=['GET'])
+
+@app.route("/playlist", methods=["GET"])
 def playlist():
     collection_entries = db["entries"]
     collection_emotions = db["emotions"]
@@ -92,30 +104,37 @@ def playlist():
     most_recent_entry = collection_entries.find_one(sort=[("_id", -1)])
 
     if not most_recent_entry:
-        return render_template('playlist.html', emotions=[])
+        return render_template("playlist.html", emotions=[])
 
     # Fetch the emotion data from the emotions collection
-    emotion_data = collection_emotions.find_one({"emotion": most_recent_entry["emotion"]})
+    emotion_data = collection_emotions.find_one(
+        {"emotion": most_recent_entry["emotion"]}
+    )
 
     if not emotion_data:
-        return render_template('playlist.html', emotions=[])
+        return render_template("playlist.html", emotions=[])
 
     # Combine the most recent entry with the emotion data
     combined_data = {
         "emotion": most_recent_entry["emotion"],
         "spotify_url": most_recent_entry["spotify_url"],
         "image": emotion_data.get("image"),
-        "description": emotion_data.get("description")
+        "description": emotion_data.get("description"),
     }
 
-    return render_template('playlist.html', emotions=[combined_data])
-    
-@app.route('/save-emotion', methods=['POST'])
+    return render_template("playlist.html", emotions=[combined_data])
+
+
+@app.route("/save-emotion", methods=["POST"])
 def save_emotion():
-    collection_entries = db["entrie"]
-    collection_emotions = db["emotion"]
+    collection_entries = db["entries"]
+    collection_emotions = db["emotions"]
     data = request.get_json()
-    emotion = data.get('emotion')
+
+    if not data:
+        return jsonify({"error": "Aucune donnée reçue"}), 400
+
+    emotion = data.get("emotion")
 
     if not emotion:
         return jsonify({"error": "Emotion manquante"}), 400
@@ -128,13 +147,16 @@ def save_emotion():
     spotify_url = emotion_data["spotify_url"]
 
     # Save to the entries collection
-    collection_entries.insert_one({
-        "emotion": emotion,
-        "spotify_url": spotify_url,
-        "date": datetime.now(),
-    })
+    collection_entries.insert_one(
+        {
+            "emotion": emotion,
+            "spotify_url": spotify_url,
+            "date": datetime.now(),
+        }
+    )
 
     return jsonify({"message": "Emotion enregistrée avec succès"})
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app.run(port=5000, debug=True)
