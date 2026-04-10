@@ -58,7 +58,13 @@ def analyze_emotion():
     if "image" not in request.files:
         return jsonify({"error": "Aucune image reçue"}), 400
 
+
     file = request.files["image"]
+    # Correction TMA :
+# Problème : la route acceptait potentiellement des fichiers non image.
+# Cause : seule la présence du fichier était vérifiée, pas son type.
+# Correction : ajout d'un contrôle du type MIME avant l'envoi au modèle IA.
+    if not file.content_type or not file.content_type.startswith("image/"): return jsonify({"error": "Le fichier doit être une image"}), 400
 
     img_bytes = file.read()
     mime_type = file.content_type
