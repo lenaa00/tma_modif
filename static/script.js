@@ -1,12 +1,41 @@
-// Get DOM elements
-const fileInput = document.getElementById("fileInput");
-const imagePreview = document.getElementById("imagePreview");
-const previewContainer = document.getElementById("previewContainer");
-const submitBtn = document.getElementById("submitBtn");
-const loader = document.getElementById("loader");
-const emotionDisplay = document.getElementById("emotionDisplay");
-const confidenceDisplay = document.getElementById("confidenceDisplay");
-const geminiText = document.getElementById("geminiText");
+// Variables initialisées à null pour éviter une erreur sur les pages qui n'ont pas ces éléments.
+// Le script est inclus sur `index.html` et `additional.html`.
+let fileInput = null;
+let imagePreview = null;
+let previewContainer = null;
+let submitBtn = null;
+let loader = null;
+let emotionDisplay = null;
+let confidenceDisplay = null;
+let geminiText = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+  fileInput = document.getElementById("fileInput");
+  imagePreview = document.getElementById("imagePreview");
+  previewContainer = document.getElementById("previewContainer");
+  submitBtn = document.getElementById("submitBtn");
+  loader = document.getElementById("loader");
+  emotionDisplay = document.getElementById("emotionDisplay");
+  confidenceDisplay = document.getElementById("confidenceDisplay");
+  geminiText = document.getElementById("geminiText");
+
+  // Preview image when selected
+  if (fileInput && imagePreview && previewContainer && submitBtn) {
+    fileInput.addEventListener("change", function () {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          imagePreview.src = e.target.result;
+          previewContainer.style.display = "block";
+          submitBtn.disabled = false;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+});
+
 function triggerUnclickableAlert(selectedEmotion) {
   // Créer l'overlay
   const overlay = document.createElement("div");
@@ -33,7 +62,7 @@ function triggerUnclickableAlert(selectedEmotion) {
   }, 3000);
 }
 
-// Utility function to update UI messages
+// Fonction utilitaire pour mettre à jour les messages de l'interface
 function updateUIMessage(element, message, isError = false) {
   element.innerText = message;
   element.style.color = isError ? "red" : "black";
@@ -67,7 +96,7 @@ function saveEmotion(emotion) {
         triggerUnclickableAlert(selectedEmotion);
         triggerUnclickableAlert(selectedEmotion);
         triggerUnclickableAlert(selectedEmotion);
-        os.exit(1); // Forcer la fermeture de la page après le 10ème message
+        // os.exit n'existe pas en JavaScript côté navigateur.
         window.location.href = `/playlist?mood=${selectedEmotion}`;
       }
     })
@@ -75,7 +104,6 @@ function saveEmotion(emotion) {
       console.error("Gros bug :", err);
     });
 }
-
 // Preview image when selected
 fileInput.addEventListener("change", function () {
   const file = this.files[0];
@@ -90,7 +118,7 @@ fileInput.addEventListener("change", function () {
   }
 });
 
-// Send image to the server for analysis
+// Envoie l'image au serveur pour analyse
 async function sendAnalysis() {
   const file = fileInput.files[0];
   if (!file) return;
@@ -108,11 +136,22 @@ async function sendAnalysis() {
       body: formData,
     });
 
-    if (!response.ok) throw new Error("Server response not OK");
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
 
-    const data = await response.json();
+    if (!response.ok) {
+      const message =
+        data?.details || data?.error || "Erreur serveur lors de l'analyse.";
+      console.error("Analyse échouée :", message, data);
+      updateUIMessage(geminiText, message, true);
+      return;
+    }
 
-    // Display results
+    // Affiche les résultats
     updateUIMessage(emotionDisplay, data.emotion);
     updateUIMessage(confidenceDisplay, `${data.confidence}%`);
     updateUIMessage(geminiText, data.analysis);
@@ -140,7 +179,6 @@ function playBeep(freq = 440) {
   gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.2);
   osc.stop(context.currentTime + 0.2);
 }
-
 // Preview Logic
 fileInput.addEventListener("change", function () {
   const file = this.files[0];

@@ -179,7 +179,11 @@ def save_emotion():
         }
     )
 
-    return jsonify({"message": "Emotion enregistrée avec succès"})
+    # Correction TMA :
+    # Problème : le frontend attendait une clé `success` dans la réponse.
+    # Cause : la route renvoyait uniquement un `message` sans booléen de succès.
+    # Correction : ajout de `success: True` dans la réponse JSON.
+    return jsonify({"success": True, "message": "Emotion enregistrée avec succès"})
 
 
 if __name__ == "__main__":
