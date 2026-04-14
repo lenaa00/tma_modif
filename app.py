@@ -22,8 +22,24 @@ ai_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 # Correction : mise à jour du nom de base pour utiliser la bonne base moodify.
 
 db_client = MongoClient(os.getenv("MONGO_URI"))
-db = db_client["moodify"]
+db = db_client["Moodify"]
 collection = db["emotions"]
+
+
+def load_local_emotions():
+    local_path = os.path.join(
+        os.path.dirname(__file__),
+        "moodify-emotions",
+        "emotions_with_images_and_music.json",
+    )
+    try:
+        with open(local_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return {item["emotion"].lower(): item for item in data if "emotion" in item}
+    except Exception:
+        return {}
+
+LOCAL_EMOTION_MAP = load_local_emotions()
 
 
 @app.after_request
@@ -61,9 +77,9 @@ def analyze_emotion():
 
     file = request.files["image"]
     # Correction TMA :
-# Problème : la route acceptait potentiellement des fichiers non image.
-# Cause : seule la présence du fichier était vérifiée, pas son type.
-# Correction : ajout d'un contrôle du type MIME avant l'envoi au modèle IA.
+    # Problème : la route acceptait potentiellement des fichiers non image.
+    # Cause : seule la présence du fichier était vérifiée, pas son type.
+    # Correction : ajout d'un contrôle du type MIME avant l'envoi au modèle IA.
     if not file.content_type or not file.content_type.startswith("image/"): return jsonify({"error": "Le fichier doit être une image"}), 400
 
     img_bytes = file.read()
@@ -82,7 +98,7 @@ def analyze_emotion():
         image_part = types.Part.from_bytes(data=img_bytes, mime_type=mime_type)
 
         response = ai_client.models.generate_content(
-            model="gemini-2.5-flash", contents=[prompt, image_part]
+            model="gemini-3.1-flash-lite-preview", contents=[prompt, image_part]
         )
 
         # Correction TMA :
@@ -110,6 +126,30 @@ def analyze_emotion():
             ),
             500,
         )
+    
+
+def normalize_spotify_embed_url(spotify_url):
+    if not spotify_url:
+        return spotify_url
+
+    if "open.spotify.com/embed/playlist" in spotify_url:
+        return spotify_url
+
+    if "open.spotify.com/playlist/" in spotify_url:
+        
+        parts = spotify_url.split("/playlist/")
+        if len(parts) > 1:
+            playlist_part = parts[1]
+            playlist_id = playlist_part.split("?")[0].split("/")[0]
+            query = ""
+            if "?" in playlist_part:
+                query = "?" + playlist_part.split("?", 1)[1]
+            return f"https://open.spotify.com/embed/playlist/{playlist_id}{query}"
+
+    if spotify_url.isalnum():
+        return f"https://open.spotify.com/embed/playlist/{spotify_url}"
+
+    return spotify_url
 
 
 @app.route("/playlist", methods=["GET"])
@@ -117,13 +157,11 @@ def playlist():
     collection_entries = db["entries"]
     collection_emotions = db["emotions"]
 
-    # Fetch the most recent entry from the entries collection
     most_recent_entry = collection_entries.find_one(sort=[("_id", -1)])
 
     if not most_recent_entry:
         return render_template("playlist.html", emotions=[])
 
-    # Fetch the emotion data from the emotions collection
     emotion_data = collection_emotions.find_one(
         {"emotion": most_recent_entry["emotion"]}
     )
@@ -131,20 +169,19 @@ def playlist():
     if not emotion_data:
         return render_template("playlist.html", emotions=[])
 
-    # Combine the most recent entry with the emotion data
     combined_data = {
         "emotion": most_recent_entry["emotion"],
-        "spotify_url": most_recent_entry["spotify_url"],
+        "spotify_url": normalize_spotify_embed_url(most_recent_entry["spotify_url"]),
         "image": emotion_data.get("image"),
         "description": emotion_data.get("description"),
     }
 
     return render_template("playlist.html", emotions=[combined_data])
 
-# Correction TMA :
-# Problème : la route utilisait des noms de collections incohérents.
-# Cause : "entrie" et "emotion" ne correspondaient pas aux collections utilisées ailleurs.
-# Correction : harmonisation avec "entries" et "emotions".
+    # Correction TMA :
+    # Problème : la route utilisait des noms de collections incohérents.
+    # Cause : "entrie" et "emotion" ne correspondaient pas aux collections utilisées ailleurs.
+    # Correction : harmonisation avec "entries" et "emotions".
 @app.route("/save-emotion", methods=["POST"])
 def save_emotion():
     collection_entries = db["entries"]
@@ -163,14 +200,17 @@ def save_emotion():
     if not emotion:
         return jsonify({"error": "Emotion manquante"}), 400
 
-    # Retrieve Spotify URL from the emotions collection
+    emotion = emotion.lower().strip()
+
     emotion_data = collection_emotions.find_one({"emotion": emotion})
+    if not emotion_data or "spotify_url" not in emotion_data:
+        emotion_data = LOCAL_EMOTION_MAP.get(emotion)
+
     if not emotion_data or "spotify_url" not in emotion_data:
         return jsonify({"error": "Spotify URL introuvable pour cette émotion"}), 404
 
     spotify_url = emotion_data["spotify_url"]
 
-    # Save to the entries collection
     collection_entries.insert_one(
         {
             "emotion": emotion,

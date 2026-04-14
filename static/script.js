@@ -1,5 +1,4 @@
 // Variables initialisées à null pour éviter une erreur sur les pages qui n'ont pas ces éléments.
-// Le script est inclus sur `index.html` et `additional.html`.
 let fileInput = null;
 let imagePreview = null;
 let previewContainer = null;
@@ -19,7 +18,6 @@ document.addEventListener("DOMContentLoaded", () => {
   confidenceDisplay = document.getElementById("confidenceDisplay");
   geminiText = document.getElementById("geminiText");
 
-  // Preview image when selected
   if (fileInput && imagePreview && previewContainer && submitBtn) {
     fileInput.addEventListener("change", function () {
       const file = this.files[0];
@@ -37,11 +35,9 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function triggerUnclickableAlert(selectedEmotion) {
-  // Créer l'overlay
   const overlay = document.createElement("div");
   overlay.className = "fake-alert-overlay";
 
-  // Créer la boîte
   const box = document.createElement("div");
   box.className = "fake-alert-box";
   box.innerHTML = `
@@ -53,25 +49,23 @@ function triggerUnclickableAlert(selectedEmotion) {
   overlay.appendChild(box);
   document.body.appendChild(overlay);
 
-  // Jouer un son d'erreur système (Bonus)
   if (typeof playBeep === "function") playBeep(200);
 
-  // Forcer la redirection après 3 secondes de blocage total
   setTimeout(() => {
     window.location.href = `/playlist?mood=${selectedEmotion}`;
   }, 3000);
 }
 
-// Fonction utilitaire pour mettre à jour les messages de l'interface
 function updateUIMessage(element, message, isError = false) {
   element.innerText = message;
   element.style.color = isError ? "red" : "black";
 }
 function saveEmotion(emotion) {
-  // On s'assure que l'émotion est propre
   const selectedEmotion = emotion.toLowerCase().trim();
+  const saveUrl = `${window.location.origin}/save-emotion`;
+  console.log("Envoi de l'émotion à :", saveUrl, selectedEmotion);
 
-  fetch("http://127.0.0.1:5000/save-emotion", {
+  fetch(saveUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -84,46 +78,25 @@ function saveEmotion(emotion) {
     })
     .then((data) => {
       if (data.success) {
-        window.location.href = `/playlist?mood=${selectedEmotion}`;
+        window.location.href = "/playlist";
       } else {
         console.error("Erreur serveur:", data.message);
-
-        triggerUnclickableAlert(selectedEmotion);
-        triggerUnclickableAlert(selectedEmotion);
-        triggerUnclickableAlert(selectedEmotion);
-        triggerUnclickableAlert(selectedEmotion);
-        triggerUnclickableAlert(selectedEmotion);
-        triggerUnclickableAlert(selectedEmotion);
-        triggerUnclickableAlert(selectedEmotion);
-        triggerUnclickableAlert(selectedEmotion);
-        // os.exit n'existe pas en JavaScript côté navigateur.
-        window.location.href = `/playlist?mood=${selectedEmotion}`;
+        window.location.href = "/playlist";
       }
     })
     .catch((err) => {
       console.error("Gros bug :", err);
     });
 }
-// Preview image when selected
-fileInput.addEventListener("change", function () {
-  const file = this.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      imagePreview.src = e.target.result;
-      previewContainer.style.display = "block";
-      submitBtn.disabled = false;
-    };
-    reader.readAsDataURL(file);
-  }
-});
 
-// Envoie l'image au serveur pour analyse
 async function sendAnalysis() {
-  const file = fileInput.files[0];
-  if (!file) return;
+  const file = fileInput?.files?.[0];
+  if (!file) {
+    updateUIMessage(geminiText, "Veuillez choisir une image avant l'analyse.", true);
+    return;
+  }
 
-  // Show loader and disable button
+
   loader.style.display = "block";
   submitBtn.disabled = true;
 
@@ -131,7 +104,9 @@ async function sendAnalysis() {
   formData.append("image", file);
 
   try {
-    const response = await fetch("http://127.0.0.1:5000/analyse-emotion", {
+    const analyseUrl = `${window.location.origin}/analyse-emotion`;
+    console.log("Envoi de l'image à :", analyseUrl);
+    const response = await fetch(analyseUrl, {
       method: "POST",
       body: formData,
     });
@@ -151,10 +126,15 @@ async function sendAnalysis() {
       return;
     }
 
-    // Affiche les résultats
+
     updateUIMessage(emotionDisplay, data.emotion);
     updateUIMessage(confidenceDisplay, `${data.confidence}%`);
     updateUIMessage(geminiText, data.analysis);
+
+    // Sauvegarde l'émotion et affiche la playlist
+    if (data.emotion) {
+      saveEmotion(data.emotion);
+    }
   } catch (error) {
     console.error("Error:", error);
     updateUIMessage(
@@ -179,16 +159,3 @@ function playBeep(freq = 440) {
   gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.2);
   osc.stop(context.currentTime + 0.2);
 }
-// Preview Logic
-fileInput.addEventListener("change", function () {
-  const file = this.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      imagePreview.src = e.target.result;
-      previewContainer.style.display = "block";
-      submitBtn.disabled = false;
-    };
-    reader.readAsDataURL(file);
-  }
-});
