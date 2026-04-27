@@ -51,9 +51,26 @@ def add_header(response):
 
 @app.route("/")
 def index():
-    # Récupération des émotions enregistrées
+    # Récupération des émotions enregistrées depuis MongoDB.
     emotions_list = list(collection.find())
-    return render_template("index.html", emotions=emotions_list)
+
+    display_emotions = []
+    for item in emotions_list:
+        emotion_key = item.get("emotion", "").lower().strip()
+        local_item = LOCAL_EMOTION_MAP.get(emotion_key)
+        if local_item:
+            merged_item = {**local_item, **item}
+            # Toujours privilégier le média local pour l'affichage.
+            merged_item["image"] = local_item.get("image")
+            merged_item["description"] = item.get("description") or local_item.get("description")
+            display_emotions.append(merged_item)
+        else:
+            display_emotions.append(item)
+
+    if not display_emotions:
+        display_emotions = list(LOCAL_EMOTION_MAP.values())
+
+    return render_template("index.html", emotions=display_emotions)
 
 
 @app.route("/additional")

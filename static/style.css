@@ -2,26 +2,27 @@
 @import url("https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css");
 
 /* Custom Styles */
-body {
-  font-family: Arial, sans-serif;
-  background-color: #f8f9fa;
-  margin: 0;
-  padding: 0;
-}
-
-.container {
-  max-width: 800px;
-  margin: 50px auto;
-  padding: 20px;
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
 
 h1 {
   text-align: center;
-  color: #343a40;
+  color: #ffffff;
   margin-bottom: 20px;
+}
+
+.page-title {
+  text-align: center;
+  margin: 0 auto 24px;
+  max-width: 900px;
+}
+
+.footer-action {
+  text-align: center;
+  margin-top: 32px;
+}
+
+.secondary-button {
+  background-color: #ff80ab;
+  color: #111827;
 }
 
 .input-section {
@@ -44,17 +45,17 @@ button {
 
 .detected-emotion {
   font-size: 1.5rem;
-  color: #007bff;
+  color: #ffffff;
 }
 
 .confidence {
   font-size: 1.2rem;
-  color: #28a745;
+  color: #ffffff;
 }
 
 .gemini-analysis {
   font-size: 1rem;
-  color: #6c757d;
+  color: #ffffff;
 }
 
 :root {
@@ -64,31 +65,53 @@ button {
 
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f0f4f8;
-  transition: all 0.3s ease;
+  background-image: url("/static/fond.jpg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  color: #ffffff;
 }
 
 .container {
-  max-width: 800px;
+  width: min(1280px, 100%);
   margin: 40px auto;
-  padding: 20px;
-  background: white;
-  border-radius: 15px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  padding: 18px 20px 34px;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
   text-align: center;
+}
+
+.cards-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 10px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 button {
   background-color: var(--primary);
+  color: #0f172a;
   border: none;
   padding: 12px 24px;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   font-weight: bold;
   transition:
     transform 0.2s,
     background-color 0.2s;
-  margin: 10px;
+  margin: 10px auto;
+  display: inline-block;
 }
 
 button:hover:not(:disabled) {
@@ -170,4 +193,86 @@ button:disabled {
   text-align: center;
   pointer-events: none; /* REND L'ALERTE INCLIQUABLE */
   user-select: none; /* Impossible de sélectionner le texte */
+}
+
+.card,
+.result-card {
+  width: 280px;
+  min-height: 560px;
+  padding: 22px;
+  margin: 0;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 18px;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card h2,
+.result-card h2 {
+  margin-bottom: 12px;
+  text-transform: capitalize;
+  color: #ffffff;
+}
+
+.card.joie {
+  background: #edca1a;
+  border-color: #facc15;
+}
+
+.card.tristesse {
+  background: #166ee0;
+  border-color: #3b82f6;
+}
+
+.card.colere {
+  background: #db4b4b;
+  border-color: #f20000;
+}
+
+.card.amour {
+  background: #ef32c0;
+  border-color: #ececec;
+}
+
+.card.angoisse {
+  background: #d9601a;
+  border-color: #7c3aed;
+}
+
+.card.neutre {
+  background: #570ee0;
+  border-color: #94a3b8;
+}
+
+.card h2,
+.result-card h2 {
+  margin-bottom: 12px;
+  text-transform: capitalize;
+}
+
+.card img,
+.card video,
+.result-card img,
+.result-card video {
+  width: 100%;
+  height: 220px;
+  border-radius: 12px;
+  object-fit: cover;
+  margin-bottom: 16px;
+}
+
+.card p,
+.result-card p {
+  margin: 0 0 18px;
+  flex-grow: 1;
+  color: #f8fafc;
+  line-height: 1.5;
+}
+
+.card button,
+.result-card button {
+  width: 100%;
 }

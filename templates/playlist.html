@@ -14,10 +14,22 @@
       {% for item in emotions %}
       <div class="result-card">
         <h2 class="detected-emotion">{{ item.emotion }}</h2>
+        {% if item.image and item.image.lower().endswith('.mp4') %}
+        <video
+          src="{{ item.image }}"
+          controls
+          autoplay
+          loop
+          muted
+          playsinline
+          style="max-width: 200px; width: 100%; border-radius: 10px; margin-bottom: 20px"
+        ></video>
+        {% else %}
         <img
           src="{{ item.image }}"
-          style="max-width: 200px; border-radius: 10px; margin-bottom: 20px"
+          style="max-width: 200px; width: 100%; border-radius: 10px; margin-bottom: 20px"
         />
+        {% endif %}
         <p><i>{{ item.description }}</i></p>
 
         <iframe

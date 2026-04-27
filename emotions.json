@@ -6,11 +6,11 @@
   {
     "emotion": "tristesse",
     "description": "Une douleur émotionnelle associée à la perte, au désespoir ou à la déception."
-  },
+   },
   {
     "emotion": "neutre",
     "description": "Un état d'équilibre sans coloration émotionnelle particulière."
-  },
+ } ,
   {
     "emotion": "colere",
     "description": "Une réaction d'irritation ou d'hostilité face à une frustration ou une injustice."
