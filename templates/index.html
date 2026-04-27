@@ -10,8 +10,14 @@
     <script src="{{ url_for('static', filename='script.js') }}"></script>
   </head>
   <body>
-    <h1 class="page-title">Comment vous sentez-vous ?</h1>
-    <div class="container cards-container">
+    <div class="page-content">
+      <h1 class="page-title">Comment vous sentez-vous ?</h1>
+      <div class="footer-action">
+        <button onclick="window.location.href = '/additional'" class="secondary-button">
+          Charger un fichier
+        </button>
+      </div>
+      <div class="cards-container">
       {% for item in emotions %}
       <div class="card {{ item.emotion | lower }}">
         <h2>{{ item.emotion }}</h2>
@@ -36,12 +42,7 @@
         <button onclick="saveEmotion('{{ item.emotion }}')">Choisir</button>
       </div>
       {% endfor %}
-    </div>
-
-    <div class="footer-action">
-      <button onclick="window.location.href = '/additional'" class="secondary-button">
-        Charger un fichier
-      </button>
+      </div>
     </div>
   </body>
 </html>

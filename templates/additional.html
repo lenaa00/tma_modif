@@ -10,7 +10,7 @@
     />
   </head>
   <body>
-    <div class="container">
+    <div class="container analysis-panel">
       <h1>Analyse de l'Émotion</h1>
       <p>
         Téléchargez une photo pour obtenir une analyse détaillée de l'humeur
@@ -52,8 +52,13 @@
           Les résultats s'afficheront ici après l'analyse.
         </p>
       </div>
+
+      <div class="footer-action">
+        <button onclick="window.location.href = '/'" class="primary-button">
+          Recommencer
+        </button>
+      </div>
     </div>
-    <button onclick="window.location.href = '/'">Recommencer</button>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
   </body>
 </html>
