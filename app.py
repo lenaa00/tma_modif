@@ -186,11 +186,15 @@ def playlist():
     if not emotion_data:
         return render_template("playlist.html", emotions=[])
 
+    local_item = LOCAL_EMOTION_MAP.get(most_recent_entry["emotion"].lower())
+    image_source = local_item.get("image") if local_item else emotion_data.get("image")
+    description_source = emotion_data.get("description") or (local_item.get("description") if local_item else None)
+
     combined_data = {
         "emotion": most_recent_entry["emotion"],
         "spotify_url": normalize_spotify_embed_url(most_recent_entry["spotify_url"]),
-        "image": emotion_data.get("image"),
-        "description": emotion_data.get("description"),
+        "image": image_source,
+        "description": description_source,
     }
 
     return render_template("playlist.html", emotions=[combined_data])
