@@ -2,6 +2,7 @@ from collections import Counter
 from datetime import datetime
 import os
 import json
+import unicodedata
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from google import genai
@@ -49,6 +50,15 @@ EMOTION_COLORS = {
     "angoisse": "#d9601a",
     "neutre": "#570ee0",
 }
+EMOTION_ALIASES = {
+    "joie": "joie",
+    "tristesse": "tristesse",
+    "neutre": "neutre",
+    "colere": "colere",
+    "colère": "colere",
+    "amour": "amour",
+    "angoisse": "angoisse",
+}
 
 
 @app.after_request
@@ -59,7 +69,18 @@ def add_header(response):
 
 
 def get_emotion_color(emotion_name):
-    return EMOTION_COLORS.get((emotion_name or "").lower(), "#94a3b8")
+    normalized_name = normalize_emotion_name(emotion_name)
+    return EMOTION_COLORS.get(normalized_name, "#94a3b8")
+
+
+def strip_accents(value):
+    normalized = unicodedata.normalize("NFKD", value or "")
+    return "".join(char for char in normalized if not unicodedata.combining(char))
+
+
+def normalize_emotion_name(emotion_name):
+    normalized_name = strip_accents((emotion_name or "").lower().strip())
+    return EMOTION_ALIASES.get(normalized_name, normalized_name)
 
 
 def format_entry_date(entry_date):
@@ -87,7 +108,7 @@ def get_emotion_history(limit=10):
 
         history.append(
             {
-                "emotion": emotion_name,
+                "emotion": normalize_emotion_name(emotion_name),
                 "date_label": format_entry_date(item.get("date")),
                 "color": get_emotion_color(emotion_name),
             }
@@ -143,10 +164,10 @@ def additional_page():
 def debug_mode():
     return jsonify({"message": "You've discovered debug mode!"})
 
-# Correction TMA :
-# Problème : les erreurs de l'analyse IA n'étaient pas compréhensibles.
-# Cause : le bloc except renvoyait seulement "error" sans détail.
-# Correction : ajout d'un message explicite avec le détail de l'exception.
+    # Correction TMA :
+    # Problème : les erreurs de l'analyse IA n'étaient pas compréhensibles.
+    # Cause : le bloc except renvoyait seulement "error" sans détail.
+    # Correction : ajout d'un message explicite avec le détail de l'exception.
 @app.route("/analyse-emotion", methods=["POST"])
 def analyze_emotion():
     if "image" not in request.files:
@@ -167,10 +188,12 @@ def analyze_emotion():
         prompt = (
             "Analyse l'expression faciale sur cette image. "
             "Réponds uniquement au format JSON avec ces clés : "
-            "'emotion' (un mot), 'confidence' (nombre entre 0 et 100), "
+            "'emotion' (un mot parmi : joie, tristesse, neutre, colere, amour, angoisse), "
+            "'confidence' (nombre entre 0 et 100), "
             "'analysis' (une description simple + quelques mots d'encouragement)."
-            "lequel de ces mots décrit le mieux l'émotion : joie, tristesse, neutre, colère, amour, angoisse ?"
-            "'result' (un mot parmi : joie, tristesse, neutre, colère, amour, angoisse)."
+            "Choisis strictement une seule emotion dans cette liste : joie, tristesse, neutre, colere, amour, angoisse. "
+            "Ne renvoie jamais de synonyme, jamais d'accent, jamais d'autre mot. "
+            "'result' (un mot parmi : joie, tristesse, neutre, colere, amour, angoisse)."
         )
 
         image_part = types.Part.from_bytes(data=img_bytes, mime_type=mime_type)
@@ -195,6 +218,12 @@ def analyze_emotion():
             return jsonify({
                 "error": "Le modèle n'a pas retourné un JSON valide", 
                 "raw_response": raw_text}), 500
+
+        canonical_emotion = normalize_emotion_name(
+            parsed_data.get("result") or parsed_data.get("emotion")
+        )
+        parsed_data["emotion"] = canonical_emotion
+        parsed_data["result"] = canonical_emotion
         return jsonify(parsed_data)
 
     except Exception as e:
@@ -246,11 +275,13 @@ def playlist():
             history_summary=history_summary,
         )
 
+    normalized_emotion = normalize_emotion_name(most_recent_entry.get("emotion"))
     emotion_data = collection_emotions.find_one(
-        {"emotion": most_recent_entry["emotion"]}
+        {"emotion": normalized_emotion}
     )
+    local_item = LOCAL_EMOTION_MAP.get(normalized_emotion)
 
-    if not emotion_data:
+    if not emotion_data and not local_item:
         return render_template(
             "playlist.html",
             emotions=[],
@@ -258,13 +289,22 @@ def playlist():
             history_summary=history_summary,
         )
 
-    local_item = LOCAL_EMOTION_MAP.get(most_recent_entry["emotion"].lower())
-    image_source = local_item.get("image") if local_item else emotion_data.get("image")
-    description_source = emotion_data.get("description") or (local_item.get("description") if local_item else None)
+    image_source = (
+        local_item.get("image")
+        if local_item
+        else emotion_data.get("image")
+    )
+    description_source = (
+        (emotion_data.get("description") if emotion_data else None)
+        or (local_item.get("description") if local_item else None)
+    )
+    spotify_source = most_recent_entry.get("spotify_url") or (
+        emotion_data.get("spotify_url") if emotion_data else None
+    ) or (local_item.get("spotify_url") if local_item else None)
 
     combined_data = {
-        "emotion": most_recent_entry["emotion"],
-        "spotify_url": normalize_spotify_embed_url(most_recent_entry["spotify_url"]),
+        "emotion": normalized_emotion,
+        "spotify_url": normalize_spotify_embed_url(spotify_source),
         "image": image_source,
         "description": description_source,
     }
@@ -298,7 +338,7 @@ def save_emotion():
     if not emotion:
         return jsonify({"error": "Emotion manquante"}), 400
 
-    emotion = emotion.lower().strip()
+    emotion = normalize_emotion_name(emotion)
 
     emotion_data = collection_emotions.find_one({"emotion": emotion})
     if not emotion_data or "spotify_url" not in emotion_data:

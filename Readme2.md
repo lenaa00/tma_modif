@@ -249,7 +249,11 @@ L'interface a été entièrement redessinée : fond personnalisé, grille de car
 ### Amélioration 4 — Bouton "Charger un fichier" sur la page d'accueil
 Un bouton de navigation direct vers la page d'analyse (`/additional`) a été ajouté sur la page d'accueil, rendant le parcours utilisateur plus intuitif.
 
-### Amélioration 5 — Suite de tests unitaires (pytest)
+### Amélioration 5 — Historique des émotions
+garder en mémoire les dernières émotions enregistrées afin d’avoir une vision plus globale de l’évolution de l’humeur ainsi qu’un graphique d’évolution récent.
+
+
+### Amélioration 6 — Suite de tests unitaires (pytest)
 Une suite complète de tests unitaires a été rédigée dans `tests/test_unit.py` :
 
 

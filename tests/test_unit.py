@@ -233,6 +233,29 @@ class TestRouteAnalyseEmotion:
         resp_data = json.loads(response.data)
         assert resp_data["emotion"] == "tristesse"
 
+    def test_reponse_ia_normalise_colere_avec_accent(self, client, app_module):
+        mock_response = MagicMock()
+        mock_response.text = json.dumps({
+            "emotion": "colère",
+            "confidence": 100,
+            "analysis": "Visage tendu",
+            "result": "colère"
+        })
+
+        with patch.object(app_module, "ai_client") as mock_ai:
+            mock_ai.models.generate_content.return_value = mock_response
+            data = {"image": make_image_file()}
+            response = client.post(
+                "/analyse-emotion",
+                data=data,
+                content_type="multipart/form-data"
+            )
+
+        assert response.status_code == 200
+        resp_data = json.loads(response.data)
+        assert resp_data["emotion"] == "colere"
+        assert resp_data["result"] == "colere"
+
     def test_exception_ia_retourne_500(self, client, app_module):
         with patch.object(app_module, "ai_client") as mock_ai:
             mock_ai.models.generate_content.side_effect = Exception("Gemini unreachable")
@@ -340,6 +363,32 @@ class TestRouteSaveEmotion:
                 response = client.post(
                     "/save-emotion",
                     data=json.dumps({"emotion": "JOIE"}),
+                    content_type="application/json"
+                )
+
+        assert response.status_code == 200
+
+    def test_emotion_colere_avec_accent_est_acceptee(self, client, app_module):
+        with patch.object(app_module, "db") as mock_db:
+            mock_col_emotions = MagicMock()
+            mock_col_emotions.find_one.return_value = None
+            mock_col_entries = MagicMock()
+
+            mock_db.__getitem__.side_effect = lambda name: (
+                mock_col_emotions if name == "emotions" else mock_col_entries
+            )
+
+            local_map = {
+                "colere": {
+                    "emotion": "colere",
+                    "spotify_url": "https://open.spotify.com/playlist/colere123"
+                }
+            }
+
+            with patch.object(app_module, "LOCAL_EMOTION_MAP", local_map):
+                response = client.post(
+                    "/save-emotion",
+                    data=json.dumps({"emotion": "colère"}),
                     content_type="application/json"
                 )
 
@@ -478,6 +527,43 @@ class TestRouteEmotionHistory:
             response = client.get("/playlist")
 
         assert response.status_code == 200
+
+    def test_playlist_utilise_fallback_local_pour_colere(self, client, app_module):
+        with patch.object(app_module, "db") as mock_db:
+            mock_entries = MagicMock()
+            mock_entries.find_one.return_value = {
+                "emotion": "colère",
+                "spotify_url": "https://open.spotify.com/playlist/colere123"
+            }
+            mock_entries.find.return_value.sort.return_value.limit.return_value = [
+                {"emotion": "colère"}
+            ]
+            mock_emotions = MagicMock()
+            mock_emotions.find_one.return_value = None
+
+            def getitem(name):
+                if name == "entries":
+                    return mock_entries
+                if name == "emotions":
+                    return mock_emotions
+                return MagicMock()
+
+            mock_db.__getitem__.side_effect = getitem
+            app_module.render_template = MagicMock(return_value="HTML MOCK")
+            app_module.LOCAL_EMOTION_MAP = {
+                "colere": {
+                    "emotion": "colere",
+                    "spotify_url": "https://open.spotify.com/playlist/colere123",
+                    "image": "/static/videos/colere.mp4",
+                    "description": "Une reaction d'irritation."
+                }
+            }
+
+            response = client.get("/playlist")
+
+        assert response.status_code == 200
+        _, kwargs = app_module.render_template.call_args
+        assert kwargs["emotions"][0]["emotion"] == "colere"
 
 
 class TestEntetesHTTP:
