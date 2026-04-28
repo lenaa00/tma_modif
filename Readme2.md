@@ -22,9 +22,9 @@ Dans le cadre de la matière **TMA**, un groupe nous a remis le projet initial c
 | Catégorie | Outils |
 |---|---|
 | Backend | Python 3, Flask, Flask-CORS |
-| IA / ML | Google Gemini (via `google-genai`) |
+| IA  | Google Gemini (via `google-genai`) |
 | Base de données | MongoDB Atlas (via `pymongo`) |
-| Frontend | HTML5, CSS3, JavaScript (Vanilla) |
+| Frontend | HTML5, CSS3, JavaScript |
 | Configuration | Python-dotenv |
 | Tests | pytest, pytest-flask |
 | Média | Vidéos MP4 / GIFs par émotion |
@@ -70,7 +70,7 @@ tma_modif/
 
 - Python 3.8+
 - pip
-- Un compte MongoDB Atlas (ou MongoDB local)
+- Un compte MongoDB 
 - Une clé API Google Gemini
 
 ---
@@ -188,7 +188,7 @@ Voici la liste des bugs identifiés dans le projet original et les corrections a
 ### Bug 2 — Noms de collections incohérents dans `/save-emotion`
 - **Problème** : la route utilisait `db["entrie"]` et `db["emotion"]` au lieu de `db["entries"]` et `db["emotions"]`, causant des erreurs silencieuses lors de l'enregistrement.
 - **Fichier** : `app.py`
-- **Correction** : harmonisation des noms de collections avec ceux utilisés dans les autres routes.
+- **Correction** : Remplacer les noms de collections avec ceux utilisés dans les autres routes.
 
 ---
 
@@ -199,7 +199,7 @@ Voici la liste des bugs identifiés dans le projet original et les corrections a
 
 ---
 
-### Bug 4 — Gestion d'erreur silencieuse dans `/analyse-emotion`
+### Bug 4 — Gestion d'erreur dans `/analyse-emotion`
 - **Problème** : le bloc `except` renvoyait uniquement `"error"` sans message ni détail, rendant le débogage impossible.
 - **Fichier** : `app.py`
 - **Correction** : renvoi d'un JSON structuré `{"error": "...", "details": str(e)}`.
@@ -220,47 +220,20 @@ Voici la liste des bugs identifiés dans le projet original et les corrections a
 
 ---
 
-### Bug 7 — URL Spotify codée en dur (`http://127.0.0.1:5000`)
-- **Problème** : les appels fetch utilisaient l'adresse localhost hardcodée, empêchant tout déploiement ou accès depuis un autre réseau.
+### Bug 7 — Listener `fileInput.addEventListener` dupliqué
+- **Problème** : l'événement `change` sur le champ fichier était déclaré deux fois, causant des plusieurs problèmes.
 - **Fichier** : `static/script.js`
-- **Correction** : remplacement par `window.location.origin` pour construire les URLs dynamiquement.
+- **Correction** : suppression du doublon. 
 
 ---
 
-### Bug 8 — Erreurs JavaScript sur les pages sans éléments DOM
-- **Problème** : les variables DOM étaient initialisées en dehors d'un `DOMContentLoaded`, causant des erreurs `null` sur les pages ne possédant pas ces éléments (ex : page playlist).
-- **Fichier** : `static/script.js`
-- **Correction** : déplacement de l'initialisation dans un `document.addEventListener("DOMContentLoaded", ...)` avec vérifications de présence des éléments.
-
----
-
-### Bug 9 — Listener `fileInput.addEventListener` dupliqué
-- **Problème** : l'événement `change` sur le champ fichier était déclaré deux fois, causant des comportements imprévisibles.
-- **Fichier** : `static/script.js`
-- **Correction** : suppression du doublon, un seul listener conservé.
-
----
-
-### Bug 10 — Réponse `/save-emotion` sans champ `success`
+### Bug 8 — Réponse `/save-emotion` sans champ `success`
 - **Problème** : le frontend testait `data.success` pour déclencher la redirection, mais le backend ne renvoyait pas ce champ.
 - **Fichier** : `app.py`
 - **Correction** : ajout de `"success": True` dans la réponse JSON.
 
 ---
 
-### Bug 11 — URL Spotify mal formatée dans le lecteur intégré
-- **Problème** : le template `playlist.html` construisait l'URL Spotify avec un format incorrect (`/embed/playlist/{{ item.spotify_url }}`), ne fonctionnant pas si l'URL complète était déjà stockée.
-- **Fichiers** : `app.py`, `templates/playlist.html`
-- **Correction** : ajout d'une fonction `normalize_spotify_embed_url()` dans le backend pour normaliser tous les formats d'URL Spotify en format embed.
-
----
-
-### Bug 12 — Alertes JavaScript malveillantes en boucle
-- **Problème** : en cas d'erreur lors de la sauvegarde, le code appelait `triggerUnclickableAlert()` en boucle (×8), bloquant totalement l'interface, puis tentait d'appeler `os.exit(1)` (inexistant en JavaScript).
-- **Fichier** : `static/script.js`
-- **Correction** : suppression de tout ce bloc, remplacement par une gestion d'erreur propre avec message affiché dans l'UI.
-
----
 
 ## Améliorations apportées
 
