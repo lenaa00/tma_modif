@@ -50,6 +50,51 @@
       </div>
       {% endfor %}
 
+      <section class="history-panel">
+        <div class="history-panel-header">
+          <h2>Historique recent</h2>
+          <p>Les dernieres emotions detectees pour suivre votre evolution.</p>
+        </div>
+
+        {% if history %}
+        <div class="history-timeline">
+          {% for entry in history %}
+          <div class="history-step">
+            <div
+              class="history-dot"
+              style="background-color: {{ entry.color }}"
+              title="{{ entry.emotion }}"
+            ></div>
+            <div class="history-step-content">
+              <strong>{{ entry.emotion }}</strong>
+              <span>{{ entry.date_label or "Date indisponible" }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="history-chart">
+          <h3>Graphique des emotions recentes</h3>
+          {% for item in history_summary %}
+          <div class="history-bar-row">
+            <span class="history-bar-label">{{ item.emotion }}</span>
+            <div class="history-bar-track">
+              <div
+                class="history-bar-fill"
+                style="width: {{ item.width_percent }}%; background-color: {{ item.color }}"
+              ></div>
+            </div>
+            <span class="history-bar-value">{{ item.count }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="history-empty">
+          <p>Aucune emotion enregistree pour le moment. Lancez une analyse ou choisissez une emotion pour commencer l'historique.</p>
+        </div>
+        {% endif %}
+      </section>
+
       <div class="footer-action">
         <button onclick="window.location.href = '/'" class="primary-button">Recommencer</button>
       </div>

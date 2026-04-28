@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import datetime
 import os
 import json
@@ -40,6 +41,14 @@ def load_local_emotions():
         return {}
 
 LOCAL_EMOTION_MAP = load_local_emotions()
+EMOTION_COLORS = {
+    "joie": "#edca1a",
+    "tristesse": "#166ee0",
+    "colere": "#db4b4b",
+    "amour": "#ef32c0",
+    "angoisse": "#d9601a",
+    "neutre": "#570ee0",
+}
 
 
 @app.after_request
@@ -47,6 +56,58 @@ def add_header(response):
 
     response.headers["Content-Security-Policy"] = "frame-ancestors 'self' *"
     return response
+
+
+def get_emotion_color(emotion_name):
+    return EMOTION_COLORS.get((emotion_name or "").lower(), "#94a3b8")
+
+
+def format_entry_date(entry_date):
+    if isinstance(entry_date, datetime):
+        return entry_date.strftime("%d/%m %H:%M")
+    return ""
+
+
+def get_emotion_history(limit=10):
+    collection_entries = db["entries"]
+
+    try:
+        cursor = collection_entries.find().sort("date", -1).limit(limit)
+        raw_entries = list(cursor)
+    except Exception:
+        raw_entries = []
+
+    raw_entries.reverse()
+
+    history = []
+    for item in raw_entries:
+        emotion_name = item.get("emotion", "").strip()
+        if not emotion_name:
+            continue
+
+        history.append(
+            {
+                "emotion": emotion_name,
+                "date_label": format_entry_date(item.get("date")),
+                "color": get_emotion_color(emotion_name),
+            }
+        )
+
+    counts = Counter(entry["emotion"].lower() for entry in history)
+    max_count = max(counts.values(), default=1)
+    summary = []
+
+    for emotion_name, total in counts.most_common():
+        summary.append(
+            {
+                "emotion": emotion_name,
+                "count": total,
+                "width_percent": round((total / max_count) * 100, 2),
+                "color": get_emotion_color(emotion_name),
+            }
+        )
+
+    return history, summary
 
 
 @app.route("/")
@@ -173,18 +234,29 @@ def normalize_spotify_embed_url(spotify_url):
 def playlist():
     collection_entries = db["entries"]
     collection_emotions = db["emotions"]
+    history, history_summary = get_emotion_history(limit=12)
 
     most_recent_entry = collection_entries.find_one(sort=[("_id", -1)])
 
     if not most_recent_entry:
-        return render_template("playlist.html", emotions=[])
+        return render_template(
+            "playlist.html",
+            emotions=[],
+            history=history,
+            history_summary=history_summary,
+        )
 
     emotion_data = collection_emotions.find_one(
         {"emotion": most_recent_entry["emotion"]}
     )
 
     if not emotion_data:
-        return render_template("playlist.html", emotions=[])
+        return render_template(
+            "playlist.html",
+            emotions=[],
+            history=history,
+            history_summary=history_summary,
+        )
 
     local_item = LOCAL_EMOTION_MAP.get(most_recent_entry["emotion"].lower())
     image_source = local_item.get("image") if local_item else emotion_data.get("image")
@@ -197,7 +269,12 @@ def playlist():
         "description": description_source,
     }
 
-    return render_template("playlist.html", emotions=[combined_data])
+    return render_template(
+        "playlist.html",
+        emotions=[combined_data],
+        history=history,
+        history_summary=history_summary,
+    )
 
     # Correction TMA :
     # Problème : la route utilisait des noms de collections incohérents.
@@ -245,6 +322,18 @@ def save_emotion():
     # Cause : la route renvoyait uniquement un `message` sans booléen de succès.
     # Correction : ajout de `success: True` dans la réponse JSON.
     return jsonify({"success": True, "message": "Emotion enregistrée avec succès"})
+
+
+@app.route("/emotion-history", methods=["GET"])
+def emotion_history():
+    history, history_summary = get_emotion_history(limit=12)
+    return jsonify(
+        {
+            "history": history,
+            "summary": history_summary,
+            "total_entries": len(history),
+        }
+    )
 
 
 if __name__ == "__main__":

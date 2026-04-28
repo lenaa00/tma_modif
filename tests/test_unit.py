@@ -411,6 +411,30 @@ class TestRoutePlaylist:
 
         assert response.status_code == 200
 
+
+class TestRouteEmotionHistory:
+    """Teste la route JSON d'historique des emotions."""
+
+    def test_emotion_history_retourne_json(self, client, app_module):
+        with patch.object(app_module, "db") as mock_db:
+            mock_entries = MagicMock()
+            mock_cursor = MagicMock()
+            mock_cursor.sort.return_value.limit.return_value = [
+                {"emotion": "joie"},
+                {"emotion": "tristesse"},
+                {"emotion": "joie"},
+            ]
+            mock_entries.find.return_value = mock_cursor
+            mock_db.__getitem__.return_value = mock_entries
+
+            response = client.get("/emotion-history")
+
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert "history" in data
+        assert "summary" in data
+        assert data["total_entries"] == 3
+
     def test_avec_entree_retourne_200(self, client, app_module):
         with patch.object(app_module, "db") as mock_db:
             mock_entries = MagicMock()

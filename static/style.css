@@ -148,10 +148,116 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 28px;
+  width: min(980px, 100%);
+  padding: 28px 20px 40px;
 }
 
 .result-card {
   margin: 0 auto;
+}
+
+.history-panel {
+  width: min(880px, 100%);
+  padding: 28px 32px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 22px;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.16);
+  color: #0f172a;
+}
+
+.history-panel-header h2,
+.history-chart h3 {
+  margin: 0 0 8px;
+  color: #0f172a;
+}
+
+.history-panel-header p {
+  margin: 0 0 22px;
+  color: #475569;
+}
+
+.history-timeline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 26px;
+}
+
+.history-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.history-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.history-step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.history-step-content strong {
+  text-transform: capitalize;
+}
+
+.history-step-content span,
+.history-empty p {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.history-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.history-bar-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 32px;
+  gap: 12px;
+  align-items: center;
+}
+
+.history-bar-label {
+  text-transform: capitalize;
+  font-weight: 600;
+}
+
+.history-bar-track {
+  width: 100%;
+  height: 14px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.history-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.history-bar-value {
+  text-align: right;
+  font-weight: 700;
+}
+
+.history-empty {
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
 }
 
 button {
@@ -354,4 +460,19 @@ button:disabled {
 .card button,
 .result-card button {
   width: 100%;
+}
+
+@media (max-width: 768px) {
+  .history-panel {
+    padding: 22px 18px;
+  }
+
+  .history-bar-row {
+    grid-template-columns: 90px 1fr 28px;
+    gap: 10px;
+  }
+
+  .history-timeline {
+    grid-template-columns: 1fr;
+  }
 }
