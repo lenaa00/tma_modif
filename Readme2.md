@@ -292,8 +292,10 @@ Une suite complète de tests unitaires a été rédigée dans `tests/test_unit.p
 | `test_sans_emotion_correspondante_retourne_200` | Route `/playlist` | Vérifie que la page ne plante pas si l'émotion liée est absente | Gère les incohérences de données |
 | `test_csp_header_present` | Sécurité HTTP | Vérifie la présence de l'en-tête `Content-Security-Policy` | Confirme une protection de sécurité |
 | `test_csp_header_contient_frame_ancestors` | Sécurité HTTP | Vérifie que la directive `frame-ancestors` est présente | Confirme le contenu de la politique CSP |
-
-### Résumé
+| `test_emotion_history_retourne_json` | Route `/emotion-history` | Vérifie que la route retourne bien un JSON contenant `history`, `summary` et `total_entries` | Permet de valider le nouveau système d’historique des émotions |
+| `test_reponse_ia_normalise_colere_avec_accent` | Route `/analyse-emotion` | Vérifie que si l’IA renvoie `colère` avec accent, l’application le transforme en `colere` | Évite les erreurs de correspondance avec les données locales et MongoDB |
+| `test_emotion_colere_avec_accent_est_acceptee` | Route `/save-emotion` | Vérifie qu’une émotion envoyée sous la forme `colère` est acceptée et correctement enregistrée | Rend le backend plus robuste face aux variantes d’écriture |
+| `test_playlist_utilise_fallback_local_pour_colere` | Route `/playlist` | Vérifie que la page playlist utilise les données locales pour `colere` si MongoDB ne contient pas les informations complètes | Garantit l’affichage de la playlist, de l’image et de l’historique même en cas de donnée incomplète en base |
 
 Ces tests permettent de vérifier que :
 
